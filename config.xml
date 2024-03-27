@@ -1,0 +1,18 @@
+<?xml version="1.0"?>
+<config>
+    <server>
+        <hostname>localhost</hostname>
+        <id>0</id>
+        <port>8013</port>
+    </server>
+    <server>
+        <hostname>localhost</hostname>
+        <id>1</id>
+        <port>8014</port>
+    </server>
+    <server>
+        <hostname>localhost</hostname>
+        <id>2</id>
+        <port>8015</port>
+    </server>
+</config>
