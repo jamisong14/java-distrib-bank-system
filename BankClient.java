@@ -22,7 +22,7 @@ class ClientThread extends Thread {
 
     public void run() {
         try {
-            for(int i = 0; i < 1; i++) {
+            for(int i = 0; i < 200; i++) {
                 // Load the configuration file
                 File file = new File("config.xml");
                 DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
@@ -50,8 +50,8 @@ class ClientThread extends Thread {
 
                 // Send the request and get the response
                 Printer.print(Thread.currentThread().getId() + " | " + serverId + " | REQ | " + LocalDateTime.now() + " | TRANSFER | from=" + from + ", to=" + to + ", amount=10", Printer.File.CLIENT, "");
-                Response res = server.receive(req, "Thread-" + Thread.currentThread().getId(), true);
-                Printer.print(Thread.currentThread().getId() + " | " + serverId + " | RES | " + LocalDateTime.now() + " | success=" + res.getSuccess(), Printer.File.CLIENT, "");
+                server.clientRequest(req, "Thread-" + Thread.currentThread().getId());
+                Printer.print(Thread.currentThread().getId() + " | " + serverId + " | RES | " + LocalDateTime.now() + " | success=" + true, Printer.File.CLIENT, "");
 
                 Thread.sleep(1000);
             }
@@ -106,46 +106,46 @@ public class BankClient {
         //     Printer.print("[MAIN THREAD] Total Balance: " + total, Printer.File.CLIENT, "");
         // }
 
-        for(int i = 0; i < 200; i++) {
-            // Choose a random server 
-            int serverCount = configDoc.getElementsByTagName("hostname").getLength();
-            int serverId = (int) (Math.random() * serverCount);
-            String host = configDoc.getElementsByTagName("hostname").item(serverId).getTextContent();
-            int port = Integer.parseInt(configDoc.getElementsByTagName("port").item(serverId).getTextContent());
+        // for(int i = 0; i < 200; i++) {
+        //     // Choose a random server 
+        //     int serverCount = configDoc.getElementsByTagName("hostname").getLength();
+        //     int serverId = (int) (Math.random() * serverCount);
+        //     String host = configDoc.getElementsByTagName("hostname").item(serverId).getTextContent();
+        //     int port = Integer.parseInt(configDoc.getElementsByTagName("port").item(serverId).getTextContent());
             
-            // Connect to the server
-            System.out.println("Connecting to server: " + host + ":" + port);
-            IBankServer server = (IBankServer) Naming.lookup("//" + host + ":" + port + "/BankServer");
+        //     // Connect to the server
+        //     System.out.println("Connecting to server: " + host + ":" + port);
+        //     IBankServer server = (IBankServer) Naming.lookup("//" + host + ":" + port + "/BankServer");
 
-            // Transfer money between two random accounts
-            int from = (int) (Math.random() * 20) + 1;
-            int to = (int) (Math.random() * 20) + 1;
-            while(to == from) {
-                to = (int) (Math.random() * 20) + 1;
-            }
+        //     // Transfer money between two random accounts
+        //     int from = (int) (Math.random() * 20) + 1;
+        //     int to = (int) (Math.random() * 20) + 1;
+        //     while(to == from) {
+        //         to = (int) (Math.random() * 20) + 1;
+        //     }
 
-            // Build the request
-            Request req = (new Request()).ofType(Request.Type.TRANSFER).from(from).to(to).withAmount(10);
+        //     // Build the request
+        //     Request req = (new Request()).ofType(Request.Type.TRANSFER).from(from).to(to).withAmount(10);
 
-            // Send the request and get the response
-            Printer.print(Thread.currentThread().getId() + " | " + serverId + " | REQ | " + LocalDateTime.now() + " | TRANSFER | from=" + from + ", to=" + to + ", amount=10", Printer.File.CLIENT, "");
-            Response res = server.receive(req, "Thread-" + Thread.currentThread().getId(), true);
-            Printer.print(Thread.currentThread().getId() + " | " + serverId + " | RES | " + LocalDateTime.now() + " | success=" + res.getSuccess(), Printer.File.CLIENT, "");
+        //     // Send the request and get the response
+        //     Printer.print(Thread.currentThread().getId() + " | " + serverId + " | REQ | " + LocalDateTime.now() + " | TRANSFER | from=" + from + ", to=" + to + ", amount=10", Printer.File.CLIENT, "");
+        //     Response res = server.receive(req, "Thread-" + Thread.currentThread().getId(), true);
+        //     Printer.print(Thread.currentThread().getId() + " | " + serverId + " | RES | " + LocalDateTime.now() + " | success=" + res.getSuccess(), Printer.File.CLIENT, "");
+        // }
+
+        // Create and start the client threads
+        System.out.println("[MAIN THREAD] Creating and starting client threads");
+        ClientThread[] threads = new ClientThread[threadCount];
+        for (int i = 0; i < threadCount; i++) {
+            threads[i] = new ClientThread(200);
+            threads[i].start();
         }
-
-        // // Create and start the client threads
-        // System.out.println("[MAIN THREAD] Creating and starting client threads");
-        // ClientThread[] threads = new ClientThread[threadCount];
-        // for (int i = 0; i < threadCount; i++) {
-        //     threads[i] = new ClientThread(200);
-        //     threads[i].start();
-        // }
         
-        // // Wait for all the client threads to finish
-        // System.out.println("[MAIN THREAD] Waiting for client threads to finish");
-        // for (int i = 0; i < threadCount; i++) {
-        //     threads[i].join();
-        // }
+        // Wait for all the client threads to finish
+        System.out.println("[MAIN THREAD] Waiting for client threads to finish");
+        for (int i = 0; i < threadCount; i++) {
+            threads[i].join();
+        }
 
         // Get the balance of each account
         IBankServer server0 = (IBankServer) Naming.lookup("//localhost:8013/BankServer");

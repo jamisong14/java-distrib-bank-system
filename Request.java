@@ -64,4 +64,19 @@ public class Request implements Serializable {
     public int getTo() {
         return toUid;
     }
+
+    public String parametersToString() {
+        switch(type) {
+            case CREATE_ACCOUNT:
+                return "uid=" + uid;
+            case GET_BALANCE:
+                return "uid=" + uid;
+            case DEPOSIT:
+                return "uid=" + uid + ", amount=" + amount;
+            case TRANSFER:
+                return "from=" + fromUid + ", to=" + toUid + ", amount=" + amount;
+            default:
+                return "";
+        }
+    }
 }

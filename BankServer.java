@@ -18,16 +18,14 @@ import java.time.LocalDateTime;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import org.w3c.dom.Document;
-import org.w3c.dom.NodeList;
-
 
 public class BankServer implements IBankServer {
 
     private int serverId = -1;
     private int rmiPort = 1099;
     ConcurrentHashMap<Integer, Account> accounts = new ConcurrentHashMap<Integer, Account>();
-    Document configDoc;
     ArrayList<Request> requestQueue = new ArrayList<Request>();
+    IBankServer[] peerServers;
     
     /**
      * Default constructor for BankServer
@@ -42,11 +40,11 @@ public class BankServer implements IBankServer {
      * @param rmiPort The port to bind the RMI server to
      * @param configDoc The configuration XML file
      */
-    public BankServer(int serverId, int rmiPort, Document configDoc) throws RemoteException {
+    public BankServer(int serverId, int rmiPort, IBankServer[] peerServers) throws RemoteException {
         super();
         this.serverId = serverId;
         this.rmiPort = rmiPort;
-        this.configDoc = configDoc;
+        this.peerServers = peerServers;
     }
 
     /**
@@ -114,47 +112,19 @@ public class BankServer implements IBankServer {
      * @param req The request to multicast
      */
     public synchronized void multicast(Request req) throws RemoteException {
-        System.out.println("[" + LocalDateTime.now() + "]: Multicasting request: " + req.getType());
-        int serverCount = configDoc.getElementsByTagName("server").getLength();
-        NodeList hostnames = configDoc.getElementsByTagName("hostname");
-        NodeList ports = configDoc.getElementsByTagName("port");
-
-        for(int i = 0; i < serverCount; i++) {
-            // No need to send request to self
-            if(i != serverId) {
-                System.out.println("[" + LocalDateTime.now() + "]: Sending request to server " + i);
-                try {
-                    String url = new String("//" + hostnames.item(i).getTextContent() + ":" + ports.item(i).getTextContent() + "/BankServer");
-                    IBankServer server = (IBankServer) Naming.lookup(url);
-                    String origin = "Server-" + serverId;
-                    server.receive(req, origin, false);
-                } catch(Exception e) {
-                    System.out.println("Error: " + e);
-                }
-            }
+        for(IBankServer peer : peerServers) {
+            peer.serverRequest(req, "Server-" + serverId);
         }
     }
 
-    /**
-     * Receive a request from a client. Adds the request to the queue and multicasts it
-     * @param req The request to receive
-     */
-    public synchronized Response receive(Request req, String origin, boolean fromClient) throws RemoteException {
-        System.out.println("[" + LocalDateTime.now() + "]: Received a new request: " + req.getType());
-        System.out.println("uid: " + req.getUid() + ", amount: " + req.getAmount() + ", from: " + req.getFrom() + ", to: " + req.getTo());
+    public synchronized void clientRequest(Request req, String origin) throws RemoteException {
+        Printer.print("Server-" + serverId + " | CLIENT-REQ | " + LocalDateTime.now() + " | [?, " + serverId + "] | " + origin + " | " + req.getType() + " | " + req.parametersToString(), Printer.File.SERVER, "" + serverId);
         requestQueue.add(req);
+        this.multicast(req);
+    }
 
-        // Only multicast if the request is not from another server
-        if(fromClient) {
-            multicast(req);
-            Printer.print("Server-" + serverId + " | CLIENT-REQ | " + LocalDateTime.now() + " | [?, " + serverId + "] | " + origin + " | " + req.getType() + " |", Printer.File.SERVER, "" + serverId);
-        }
-        else 
-            Printer.print("Server-" + serverId + " | SRV-REQ | " + LocalDateTime.now() + " | [?, " + serverId + "] | " + origin + " | " + req.getType() + " |", Printer.File.SERVER, "" + serverId);
-
-        // TESTING: Execute the request immediately
-        return execute();
-        // return (new Response());
+    public synchronized void serverRequest(Request req, String origin) throws RemoteException {
+        Printer.print("Server-" + serverId + " | SRV-REQ | " + LocalDateTime.now() + " | [?, " + serverId + "] | " + origin + " | " + req.getType() + " | " + req.parametersToString(), Printer.File.SERVER, "" + serverId);
     }
 
     /**
@@ -208,6 +178,8 @@ public class BankServer implements IBankServer {
         IBankServer bankServerStub;
         Registry localRegistry;
         Document configDoc;
+        String hostname = "";
+        int peerCount = 0;
         int serverId = -1;
         int rmiPort = 1099;
 
@@ -227,9 +199,12 @@ public class BankServer implements IBankServer {
                 DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
                 DocumentBuilder db = dbf.newDocumentBuilder();
                 configDoc = db.parse(file);
+                peerCount = configDoc.getElementsByTagName("server").getLength() - 1;
     
                 // Get the rmi port based off the server id
                 rmiPort = Integer.parseInt(configDoc.getElementsByTagName("port").item(serverId).getTextContent());
+                hostname = configDoc.getElementsByTagName("hostname").item(serverId).getTextContent();
+                
                 System.out.println("RMI Port: " + rmiPort);
             } 
             // Entered serverId is not a number
@@ -246,12 +221,21 @@ public class BankServer implements IBankServer {
 
         // Attempt to start the server
         try {
-            bankServer = new BankServer(serverId, rmiPort, configDoc);
-            System.setProperty("java.rmi.server.hostname", InetAddress.getLocalHost().getCanonicalHostName());
+
+            // Find the peer servers
+            IBankServer[] peerServers = new IBankServer[peerCount];
+            for (int i = 0; i < peerCount; i++) {
+                String host = configDoc.getElementsByTagName("hostname").item(i).getTextContent();
+                int port = Integer.parseInt(configDoc.getElementsByTagName("port").item(i).getTextContent());
+                peerServers[i] = (IBankServer) Naming.lookup("//" + hostname + ":" + port + "/BankServer");
+            }
+
+            bankServer = new BankServer(serverId, rmiPort, peerServers);
+            System.setProperty("java.rmi.server.hostname", hostname);
             bankServerStub = (IBankServer) UnicastRemoteObject.exportObject(bankServer, 0);
             localRegistry = LocateRegistry.createRegistry(rmiPort);
 
-            String url = new String("//" + InetAddress.getLocalHost().getCanonicalHostName() + ":" + rmiPort + "/BankServer");
+            String url = new String("//" + hostname + ":" + rmiPort + "/BankServer");
             System.out.println("URL: " + url);
             Naming.bind(url, bankServerStub);
             System.out.println("Completed binding to RMI registry on port " + rmiPort);
@@ -263,14 +247,15 @@ public class BankServer implements IBankServer {
                 System.out.println("Account created: " + uid + ", Deposit: " + res);
             }
     
-            System.out.println("Server active on host: " + InetAddress.getLocalHost().getCanonicalHostName());
+            System.out.println("Server active on host: " + hostname + ":" + rmiPort);
             Thread.sleep(300000);
     
             bankServer.shutdown();
             System.out.println("Server shutdown complete");
         }
         catch(Exception e) {
-            System.out.println("Error: " + e);
+            System.out.println("Another Error: " + e);
+            e.printStackTrace();
             return;
         }
     }

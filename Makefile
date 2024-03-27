@@ -38,7 +38,7 @@ client:
 # Run the client
 runc:
 	@echo "Running BankClient"
-	${JR} BankClient 2 config.xml
+	${JR} BankClient 1 config.xml
 
 # Run the server
 runs:

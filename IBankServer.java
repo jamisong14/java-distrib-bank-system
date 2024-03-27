@@ -13,6 +13,7 @@ public interface IBankServer extends Remote {
     public boolean deposit(int uid, int amount) throws RemoteException;
     public boolean transfer(int fromUid, int toUid, int amount) throws RemoteException;
     public void multicast(Request req) throws RemoteException;
-    public Response receive(Request req, String origin, boolean fromClient) throws RemoteException;
+    public void clientRequest(Request req, String origin) throws RemoteException;
+    public void serverRequest(Request req, String origin) throws RemoteException;
     public Response execute() throws RemoteException;
 } 
