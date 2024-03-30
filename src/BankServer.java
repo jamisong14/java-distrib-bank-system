@@ -459,7 +459,7 @@ public class BankServer implements IBankServer {
                 int port = Integer.parseInt(configDoc.getElementsByTagName("port").item(i).getTextContent());
 
                 int c = 1; // Tracks number of attempts for peer connection
-                System.out.println("Waiting for Server-" + i + " @ //" + hostname + ":" + port + " to start...");
+                System.out.println("Waiting for Server-" + i + " @ //" + host + ":" + port + " to start...");
 
                 // Continuously attempt to connect to the peer server, waiting 1 second
                 // between attempts until successful. The server will automatically detect when 

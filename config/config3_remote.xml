@@ -1,18 +1,18 @@
 <?xml version="1.0"?>
 <config>
     <server>
-        <hostname>csel-kh1250-13.cselabs.umn.edu</hostname>
+        <hostname>csel-kh1260-14.cselabs.umn.edu</hostname>
         <id>0</id>
-        <port>8013</port>
-    </server>
-    <server>
-        <hostname>csel-kh1250-14.cselabs.umn.edu</hostname>
-        <id>1</id>
         <port>8014</port>
     </server>
     <server>
-        <hostname>csel-kh1250-15.cselabs.umn.edu</hostname>
-        <id>2</id>
+        <hostname>csel-kh1260-15.cselabs.umn.edu</hostname>
+        <id>1</id>
         <port>8015</port>
+    </server>
+    <server>
+        <hostname>csel-kh1260-16.cselabs.umn.edu</hostname>
+        <id>2</id>
+        <port>8016</port>
     </server>
 </config>

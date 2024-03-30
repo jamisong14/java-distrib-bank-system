@@ -1,8 +1,8 @@
 <?xml version="1.0"?>
 <config>
     <server>
-        <hostname>csel-kh1250-30.cselabs.umn.edu</hostname>
+        <hostname>csel-kh1260-14.cselabs.umn.edu</hostname>
         <id>0</id>
-        <port>8013</port>
+        <port>8014</port>
     </server>
 </config>
