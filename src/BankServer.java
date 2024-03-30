@@ -1,8 +1,17 @@
-package src;
 /**
- * Authors:
- *  - Jamison Grudem(grude013)
+ * @file src/BankServer.java
+ * @brief The BankServer class is the actual implementation of the IBankServer interface. It is responsible for performing bank operations
+ *          such as creating accounts, getting balances, etc. The BankServer also handles server-server communication and synchronization 
+ *          between copies of the database. The BankServer accepts a configuration file as a command line argument to determine the server's
+ *          hostname, port, and the hostname and port of its peers. The BankServer will listen for requests, mutlicasting them between its
+ *          peers until a HALT command is received. The BankServer will then print out the final balances of all accounts and exit.
+ * @created 2024-03-30
+ * @author Jamison Grudem (grude013)
+ * 
+ * @grace_days Using 1 grace day
  */
+
+package src;
 
 import java.rmi.Naming;
 import java.rmi.RemoteException;
@@ -20,13 +29,19 @@ import org.w3c.dom.Document;
 
 public class BankServer implements IBankServer {
 
+    // Store the server id
     private int serverId = -1;
+    // Store the rmi port the server is running on
     private int rmiPort = 1099;
+    // Our local copy of the database - hash map of accounts
     ConcurrentHashMap<Integer, Account> accounts = new ConcurrentHashMap<Integer, Account>();
+    // Queue of requests to be executed
     ArrayList<Request> requestQueue = new ArrayList<Request>();
-    ArrayList<Request> executedRequests = new ArrayList<Request>();
+    // Array of peer servers
     IBankServer[] peerServers;
+    // The clock manager for the server - stores timestamps
     LamportClockManager clockManager;
+    // Store the time it takes to execute requests
     ArrayList<Double> timeEntries = new ArrayList<Double>();
     
     /**
@@ -50,10 +65,10 @@ public class BankServer implements IBankServer {
         this.clockManager = new LamportClockManager();
     }
 
-    public int getId() {
-        return serverId;
-    }
-
+    /**
+     * Add a peer server to the list of servers
+     * @param peer IBankServer object to add
+     */
     public void addPeer(IBankServer peer) {
         for(int i = 0; i < peerServers.length; i++) {
             if(peerServers[i] == null) {
@@ -65,6 +80,8 @@ public class BankServer implements IBankServer {
 
     /**
      * Create a new account
+     * @param uid The account id
+     * @return The account id
      */
     public synchronized int createAccount(int uid) throws RemoteException {
         Account a = new Account(uid);
@@ -75,6 +92,7 @@ public class BankServer implements IBankServer {
     /**
      * Get the balance of an account
      * @param uid The account id
+     * @return The balance of the account
      */
     public synchronized int getBalance(int uid) throws RemoteException {
         if (!accounts.containsKey(uid)) {
@@ -87,6 +105,7 @@ public class BankServer implements IBankServer {
      * Deposit money into an account
      * @param uid The account id
      * @param amount The amount to deposit
+     * @return True if the deposit was successful, false otherwise
      */
     public synchronized boolean deposit(int uid, int amount) throws RemoteException {
         // Check to make sure account with uid exists
@@ -103,6 +122,7 @@ public class BankServer implements IBankServer {
      * @param fromUid The account id to transfer from
      * @param toUid The account id to transfer to
      * @param amount The amount to transfer
+     * @return True if the transfer was successful, false otherwise
      */
     public synchronized boolean transfer(int fromUid, int toUid, int amount) throws RemoteException {
         // Check to make sure account with uid exists
@@ -122,7 +142,12 @@ public class BankServer implements IBankServer {
         return true;
     }
 
+    /**
+     * Halt the server, print out the final balances of all accounts and the request queue, then shutdown
+     * @throws RemoteException
+     */
     public synchronized void halt() throws RemoteException {
+        // Log balances of all accounts
         int total = 0;
         for(int i = 1; i < 21; i++) {
             total += getBalance(i);
@@ -130,37 +155,58 @@ public class BankServer implements IBankServer {
         }
         Printer.print("Server-" + serverId + " | | " + LocalDateTime.now() + " | | | TOTAL | balance=" + total, Printer.File.SERVER, "" + serverId, "#737bf0");
 
+        // Log the request queue
         Printer.print("Server-" + serverId + " | | " + LocalDateTime.now() + " | | | QUEUE_PRINT", Printer.File.SERVER, "" + serverId, "#b2b7f7");
         for(Request r : requestQueue) {
             Printer.print("Server-" + serverId + " | | " + LocalDateTime.now() + " | | | QUEUE | " + r.getType() + " | " + r.parametersToString(), Printer.File.SERVER, "" + serverId, "#b2b7f7");
         }
         Printer.print("Server-" + serverId + " | | " + LocalDateTime.now() + " | | | EXIT", Printer.File.SERVER, "" + serverId, "#737bf0");
-        // this.shutdown();
 
+        // Shutdown the server
         shutdown(this, serverId, rmiPort);
     }
 
-    // RMI Server Shutdown Cleanup
+    /**
+     * Shutdown the server in a new thread.
+     * 
+     * We do this because when the server multicasts a HALT message, it waits for a response
+     * but it will never get one if the server shuts down before sending a response. The server
+     * will send its response and then shutdown in its own thread.
+     * @param server The BankServer object
+     * @param serverId The server id
+     * @param rmiPort The RMI port
+     */
     public void shutdown(BankServer server, int serverId, int rmiPort) {
         Thread t = new Thread(() -> shutdownStatic(server, serverId, rmiPort));
         t.start();
     }
 
+    /**
+     * Static method of the traditional shutdown() method provided in Canvas code samples.
+     * This method was created as threads cannot call instance methods. We need to create 
+     * a static solution with the provided instance to shutdown.
+     * @param server The BankServer object
+     * @param serverId The server id
+     * @param rmiPort The RMI port
+     */
     public static void shutdownStatic(BankServer server, int serverId, int rmiPort) {
         try {
-            // Get the average request time
+            // Get and log the total average request time
             double avgTime = 0;
             for(double time : server.timeEntries) {
                 avgTime += time;
             }
             avgTime = avgTime / server.timeEntries.size();
-
             Printer.print("Server-" + serverId + " | | | | | REPORT | avg request time=" + avgTime + "s", Printer.File.SERVER, "" + serverId, "#737bf0");
+
+            // Close logs, unbind the server, and unexport the object
             Printer.closeHtmlLog(Printer.File.SERVER, "" + serverId);
             System.out.println("Shutting down server...");
             Registry localRegistry = LocateRegistry.getRegistry(rmiPort);
             localRegistry.unbind("BankServer");
             UnicastRemoteObject.unexportObject(server, true);
+
+            // Exit the program
             System.out.println("Server shutdown complete");
             System.exit(0);
         } catch(Exception e) {
@@ -168,22 +214,30 @@ public class BankServer implements IBankServer {
         }
     }
 
+    /**
+     * Add a new request object into the request queue in sorted order based on Lamport Clocks
+     * @param req The request object to add
+     */
     public synchronized void addRequestInSequence(Request req) {
         requestQueue.add(req);
         requestQueue.sort((r1, r2) -> r1.getClock().compareTo(r2.getClock()));
     }
 
+    /**
+     * Add a new time entry to the timeEntries list
+     * @param time The time to add (in seconds)
+     */
     public synchronized void addTime(double time) {
         timeEntries.add(time);
     }
 
-    public synchronized void printQueue(String from) {
-        // Print out the request queue
-        // String queue = "";
-        // for(Request r : requestQueue) {
-        //     queue += "\t" + r.getOrigin() + " | " + r.getType() + " | " + r.parametersToString() + " | " + r.getClock() + "\n";
-        // }
-        // Printer.print(from + " Request Queue (size: " + requestQueue.size() + ")\n" + queue, Printer.File.SERVER, "" + serverId);
+    /**
+     * [IBankServer] RMI INTERFACE
+     * 
+     * Get the server id
+     */
+    public int getId() {
+        return serverId;
     }
 
     /**
@@ -191,79 +245,120 @@ public class BankServer implements IBankServer {
      * @param req The request to multicast
      */
     public Response[] multicast(Request req) throws RemoteException {
+        // Build the current server as the origin of the request, rather than the client
         req = req.withOrigin("Server-" + serverId);
+
+        // Multicast the request to all peer servers
         Response[] responses = new Response[peerServers.length];
         for(int i = 0; i < peerServers.length; i++) {
             IBankServer peer = peerServers[i];
+            // Log request
             Printer.print("Server-" + serverId + " | -> SRV-REQ | " + LocalDateTime.now() + " | " + req.getClock() + " | Server-" + peer.getId() + " | " + req.getType() + " | " + req.parametersToString(), Printer.File.SERVER, "" + serverId, "#de9050");
+            // Send request
             Response res = peer.serverRequest(req);
+            // Log response
             Printer.print("Server-" + serverId + " | SRV-RES    | " + LocalDateTime.now() + " | " + req.getClock() + " | Server-" + peer.getId() + " | " + req.getType(), Printer.File.SERVER, "" + serverId, "#b2f7b9");
             responses[i] = res;
         }
+
         return responses;
     }
 
+    /**
+     * [IBankServer] RMI INTERFACE
+     * 
+     * Accept a new request from a client. 
+     *  - Multicast the request to all servers
+     *  - Wait for all servers to respond with ACK
+     *  - Wait for the current request to be at the head of the queue
+     *  - Send execute message to all peers
+     *  - Execute the request locally and return as reponse
+     * 
+     * @param req The request object
+     * @return The response from executing the request
+     */
     public Response clientRequest(Request req) throws RemoteException {
+        // Create and start the timer
         Timer timer = new Timer();
         timer.start();
+
+        // Increment the clock and update the request's clock
         clockManager.increment();
         req = req.withClock(new LamportClock(clockManager.getClockValue(), serverId));
         Printer.print("Server-" + serverId + " | CLIENT-REQ | " + LocalDateTime.now() + " | " + req.getClock() + " | " + req.getOrigin() + " | " + req.getType() + " | " + req.parametersToString(), Printer.File.SERVER, "" + serverId, "#e67417");
 
-        addRequestInSequence(req);
+        this.addRequestInSequence(req);
 
-        // No need to multicast a get balance request - we are not modifying anything so just execute this right away
-        Response[] responses = new Response[peerServers.length];
+        // Mutlicast the request to all servers
+        // Response[] responses = new Response[peerServers.length];
         Request.Type reqType = req.getType();
         if(reqType != Request.Type.GET_BALANCE)
-            responses = this.multicast(req);
+            this.multicast(req);
+        // No need to multicast a get balance request - we are not modifying anything so just execute this right away
         else
             return this.execute(req);
 
-        printQueue("From ClientRequest " + req.getClock());
 
         // Wait for the current request to be at the head of the queue
         while(requestQueue.get(0) != req) {
-            printQueue("| " + LocalDateTime.now() + " | Waiting for head request " + req.getClock() + " | Current head: " + requestQueue.get(0).getClock());
-            // System.out.println("Waiting for request to be at the head of the queue " + req.getClock());
+            // Gives helpful figure of when client will finish
+            System.out.println("Waiting for request: " + req.getClock() + ", Current head: " + requestQueue.get(0).getClock());
         }
 
-        // Printer.print("Executing request locally: " + req.getClock() + " | " + peerServers.length + " peers to execute on", Printer.File.SERVER, "" + serverId);
+        // Send execute message to all peers
         for(IBankServer peer : peerServers) {
-            // System.out.println("Executing request on peer: " + peer.getId() + " | " + req.getClock());
             peer.execute(req);
         }
+
+        // Stop time, request has finished
         timer.stop();
         addTime(timer.getTime());
         timer.clear();
         
+        // Execute the request locally
         return this.execute(req);
     }
 
+    /**
+     * [IBankServer] RMI INTERFACE
+     * 
+     * Accept a new request from another server. Used for P2P multicasting.
+     *  - Add the request to the queue
+     *  - Return an ACK response
+     * 
+     * @param req The request object
+     * @return An ACK response
+     */
     public Response serverRequest(Request req) throws RemoteException {
         Printer.print("Server-" + serverId + " | <- SRV-REQ | " + LocalDateTime.now() + " | " + req.getClock() + " | " + req.getOrigin() + " | " + req.getType() + " | " + req.parametersToString(), Printer.File.SERVER, "" + serverId, "#e3b28a");
         addRequestInSequence(req);
-
-        printQueue("From ServerRequest" + req.getClock());
         return (new Response()).ofType(Response.Type.ACK).withClock(req.getClock());
     }
 
     /**
-     * Execute the next request in the queue
+     * [IBankServer] RMI INTERFACE
+     * 
+     * Execute a request locally
+     *  - Find the request in the queue and remove it
+     *  - Execute the request based on its type
+     * 
+     * @param req The request object
+     * @return The response from executing the request
      */
     public synchronized Response execute(Request req) {
+        // Log execution of request
         Printer.print("Server-" + serverId + " | EXECUTE   | " + LocalDateTime.now() + " | " + req.getClock() + " | " + req.getOrigin() + " | " + req.getType() + " | " + req.parametersToString(), Printer.File.SERVER, "" + serverId, "#5fe8e6");
 
         LamportClock reqClock = req.getClock();
-        // Find the request in the queue and remove it
+        // Find the request in the queue by its clock and remove it
         for(Request r : requestQueue) {
             if(r.getClock().compareTo(reqClock) == 0) {
                 requestQueue.remove(r);
-                printQueue("| " + LocalDateTime.now() + " | Removed request from queue " + req.getClock());
                 break;
             }
         }
 
+        // Execute the corresponding methods based on the request type
         try {
             switch(req.getType()) {
                 case CREATE_ACCOUNT:
@@ -287,12 +382,16 @@ public class BankServer implements IBankServer {
         }
     }
 
+    /**
+     * Main method for the BankServer
+     * @param args Command line arguments
+     */
     public static void main(String[] args) {
 
         // Initialize variables
         BankServer bankServer;
         IBankServer bankServerStub;
-        Registry localRegistry;
+        Registry localRegistry; // Ignore this warning, necessary for binding
         Document configDoc;
         String hostname = "";
         int serverCount = 0;
@@ -304,7 +403,7 @@ public class BankServer implements IBankServer {
             System.out.println("Usage: java BankServer <serverId> <configFile>");
             return;
         }
-        // Parse command line arguments
+        // Parse command line arguments and configuration file
         else {
             try {
                 serverId = Integer.parseInt(args[0]);
@@ -336,34 +435,46 @@ public class BankServer implements IBankServer {
 
         // Attempt to start the server
         try {
-            // Start this server
-            Printer.print("Server-" + serverId + " |    LIVE    | " + LocalDateTime.now(), Printer.File.SERVER, "" + serverId, "#737bf0");
+            // Create a bank server and bind it to RMI based off of configuration file
             bankServer = new BankServer(serverId, rmiPort, serverCount - 1);
             System.setProperty("java.rmi.server.hostname", hostname);
             bankServerStub = (IBankServer) UnicastRemoteObject.exportObject(bankServer, 0);
             localRegistry = LocateRegistry.createRegistry(rmiPort);
             String url = new String("//" + hostname + ":" + rmiPort + "/BankServer");
             Naming.bind(url, bankServerStub);
+
+            // Log the server start
+            Printer.print("Server-" + serverId + " |    LIVE    | " + LocalDateTime.now(), Printer.File.SERVER, "" + serverId, "#737bf0");
             System.out.println("Server started on //" + hostname + ":" + rmiPort);
 
             // Find the peer servers
             for (int i = 0; i < serverCount; i++) {
+                // Ignore self
                 if (i == serverId) {
                     continue;
                 }
+
+                // Get peer host and port
                 String host = configDoc.getElementsByTagName("hostname").item(i).getTextContent();
                 int port = Integer.parseInt(configDoc.getElementsByTagName("port").item(i).getTextContent());
-                int c = 1;
+
+                int c = 1; // Tracks number of attempts for peer connection
                 System.out.println("Waiting for Server-" + i + " @ //" + hostname + ":" + port + " to start...");
+
+                // Continuously attempt to connect to the peer server, waiting 1 second
+                // between attempts until successful. The server will automatically detect when 
+                // a peer server is started and connect to it.
                 while(true) {
                     Printer.print("Server-" + serverId + " |  PEER-CON  | " + LocalDateTime.now() + " | | | ATTEMPT " + c + " | " + host + ":" + port, Printer.File.SERVER, "" + serverId, "#b2b7f7");
+                    // Succesful connection
                     try {
                         IBankServer peer = (IBankServer) Naming.lookup("//" + host + ":" + port + "/BankServer");
-                        Printer.print("Server-" + serverId + " |  PEER-CON  | " + LocalDateTime.now() + " | | | SUCCESS | " + host + ":" + port, Printer.File.SERVER, "" + serverId, "#b2b7f7");
+                        Printer.print("Server-" + serverId + " |  PEER-CON  | " + LocalDateTime.now() + " | | | SUCCESS | " + host + ":" + port, Printer.File.SERVER, "" + serverId, "#737bf0");
                         bankServer.addPeer(peer);
                         System.out.println("Peer Server-" + i + " connected");
                         break;
                     }
+                    // Error connecting, try again
                     catch(Exception e) {
                         c++;
                         Thread.sleep(1000);
@@ -376,18 +487,23 @@ public class BankServer implements IBankServer {
             for (int i = 1; i < 21; i++) {
                 int uid = bankServer.createAccount(i);
                 boolean res = bankServer.deposit(uid, 1000);
-                // System.out.println("Account created: " + uid + ", Deposit: " + res);
+                // Error handling
+                if(!res) {
+                    System.out.println("Error creating account or depositing money, uid=" + uid);
+                    return;
+                }
             }
+            // Log the initialization of the server
             System.out.println("Initialization complete, ready for requests.");
             Printer.print("Server-" + serverId + " |    INIT    | " + LocalDateTime.now(), Printer.File.SERVER, "" + serverId, "#737bf0");
 
+            // The following code snippet is necessary for properly closing the  
+            // log file in the case of a server interruption (e.g. CTRL+C)  
             final int sid = serverId;
             Thread shutdownThread = new Thread() {
                 @Override
                 public void run() {
-                    try {
-                        Printer.closeHtmlLog(Printer.File.SERVER, "" + sid);
-                    }
+                    try { Printer.closeHtmlLog(Printer.File.SERVER, "" + sid); }
                     catch (Exception e) {
                         System.err.println("Couldn't close log file before terminating.");
                         e.printStackTrace();
@@ -396,13 +512,15 @@ public class BankServer implements IBankServer {
             };
             Runtime.getRuntime().addShutdownHook(shutdownThread);
 
+            // Wait for 5 minutes before shutting down if no HALT request is received
             Thread.sleep(300000);
     
+            // Shutdown the server
             bankServer.shutdown(bankServer, serverId, rmiPort);
             System.out.println("Server shutdown complete");
         }
         catch(Exception e) {
-            System.out.println("Another Error: " + e);
+            System.out.println("Server Error: " + e);
             e.printStackTrace();
             return;
         }

@@ -7,22 +7,22 @@
     </server>
     <server>
         <hostname>csel-kh1250-14.cselabs.umn.edu</hostname>
-        <id>0</id>
+        <id>1</id>
         <port>8014</port>
     </server>
     <server>
         <hostname>csel-kh1250-15.cselabs.umn.edu</hostname>
-        <id>0</id>
+        <id>2</id>
         <port>8015</port>
     </server>
     <server>
         <hostname>csel-kh1250-16.cselabs.umn.edu</hostname>
-        <id>0</id>
+        <id>3</id>
         <port>8016</port>
     </server>
     <server>
         <hostname>csel-kh1250-17.cselabs.umn.edu</hostname>
-        <id>0</id>
+        <id>4</id>
         <port>8017</port>
     </server>
 </config>

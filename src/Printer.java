@@ -1,6 +1,10 @@
 /**
- * Authors:
- *  - Jamison Grudem(grude013)
+ * @file src/Printer.java
+ * @brief Printer class used for writing to the .log and .html files for logging and debugging.
+ * @created 2024-03-30
+ * @author Jamison Grudem (grude013)
+ * 
+ * @grace_days Using 1 grace day
  */
 
 package src;
@@ -9,10 +13,6 @@ import java.io.BufferedWriter;
 import java.io.FileWriter;
 import java.time.LocalDateTime;
 
-/**
- * class Printer
- * @description A utility class used to print to the console and to a file in one statement
- */
 public class Printer {
 
     // Stores the file writer
@@ -26,7 +26,10 @@ public class Printer {
         SERVER
     }
 
-    // Resolves the actual filename from a File enum value
+    /**
+     * Resolves the actual filename from a File enum value
+     * @return [String] The filename
+     */
     public static String getFilenameFromFile(File file) {
         if(file.equals(File.CLIENT))
             return "client";
@@ -36,23 +39,30 @@ public class Printer {
             return "";
     }
 
-    // Initializes the writer and buffered writer
+    /**
+     * Initializes the writer and buffered writer
+     */
     public static void start() {
         writer = null;
         bwriter = null;
     }
 
-    // Prints to the console and the specified file
+    /**
+     * Prints to the console and the specified file
+     * @param arg The string to print, delimited by '|' for HTML
+     * @param file The enum value of the file to write to
+     * @param id An optional identifier for the file
+     */
     public static synchronized void print(String arg, File file, String id) {
         try {
-            // System.out.println(arg);
+            // Write to the .log file as is
             String filename = "../log/" + getFilenameFromFile(file) + id + ".log";
             writer = new FileWriter(filename, true);
             bwriter = new BufferedWriter(writer);
             bwriter.write(arg + "\n");
             bwriter.flush();
 
-            // Write to the html file - with specified color
+            // Write to the HTML file with a table row delimited by '|'
             String htmlFilename = "../log/html/" + getFilenameFromFile(file) + id + ".html";
             FileWriter htmlWriter = new FileWriter(htmlFilename, true);
             BufferedWriter htmlBwriter = new BufferedWriter(htmlWriter);
@@ -69,7 +79,13 @@ public class Printer {
         }
     }   
 
-    // Prints to the console and the specified file
+    /**
+     * Prints to the console and the specified file
+     * @param arg The string to print, delimited by '|' for HTML
+     * @param file The enum value of the file to write to
+     * @param id An optional identifier for the file
+     * @param htmlColor The color to use for the HTML row
+     */
     public static synchronized void print(String arg, File file, String id, String htmlColor) {
         try {
             // System.out.println(arg);
@@ -96,6 +112,12 @@ public class Printer {
         }
     }
 
+    /**
+     * Initializes the HTML log file, writes HTML header and starts the table
+     * @param file The file to write to
+     * @param id The identifier for the file
+     * @param links The links to other logs
+     */
     public static synchronized void initHtmlLog(File file, String id, String links) {
         try {
             String fileString = getFilenameFromFile(file);
@@ -135,6 +157,11 @@ public class Printer {
         }
     }
 
+    /**
+     * Closes the HTML log file, writes the closing table and body tags
+     * @param file The file to write to
+     * @param id The identifier for the file
+     */
     public static synchronized void closeHtmlLog(File file, String id) {
         try {
             String htmlFilename = "../log/html/" + getFilenameFromFile(file) + id + ".html";
@@ -148,7 +175,9 @@ public class Printer {
         }
     }
 
-    // Closes the writer and buffered writer
+    /**
+     * Closes the writer and buffered writer
+     */
     public static void close() {
         try {
             bwriter.close();

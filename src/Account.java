@@ -1,6 +1,10 @@
 /**
- * Authors:
- *  - Jamison Grudem(grude013)
+ * @file src/Account.java
+ * @brief This is the Account class which is used to represent an account in the bank
+ * @created 2024-03-30
+ * @author Jamison Grudem (grude013)
+ * 
+ * @grace_days Using 1 grace day
  */
 
 package src;
