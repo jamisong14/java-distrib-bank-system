@@ -117,7 +117,15 @@ public class Printer {
             }
             // Write the header row for a server log
             else {
-                htmlBwriter.write("<table style='width: 100%; position: relative;'>");
+                htmlBwriter.write("<table style='width: 100%; position: relative;'><tr style='position: sticky; top: 0; background: white;'>" + 
+                    "<th style='border: 1px solid black;'>Server</th>" +
+                    "<th style='border: 1px solid black;'>Operation</th>" +
+                    "<th style='border: 1px solid black;'>Timestamp</th>" +
+                    "<th style='border: 1px solid black;'>Lamport Clock</th>" +
+                    "<th style='border: 1px solid black;'>Origin</th>" +
+                    "<th style='border: 1px solid black;'>Message</th>" + 
+                    "<th style='border: 1px solid black;'>Parameters</th></tr>\n"
+                );
             }
 
             htmlBwriter.flush();

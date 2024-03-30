@@ -68,6 +68,9 @@ sl1:
 # Run the server - 3 local servers
 sl3:
 	cd build && ${JR} src/BankServer $(id) ../config/config3_local.xml
+# Run the server - 5 local servers
+sl5:
+	cd build && ${JR} src/BankServer $(id) ../config/config5_local.xml
 
 # Run server 0
 r0:

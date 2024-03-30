@@ -10,7 +10,8 @@ public class Response implements Serializable {
         DEPOSIT,
         TRANSFER,
         ACK,
-        NACK
+        NACK,
+        HALT
     }
 
     private LamportClock clock;

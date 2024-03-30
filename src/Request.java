@@ -8,7 +8,8 @@ public class Request implements Serializable {
         CREATE_ACCOUNT,
         GET_BALANCE,
         DEPOSIT,
-        TRANSFER
+        TRANSFER,
+        HALT
     }
 
     private LamportClock clock;

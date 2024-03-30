@@ -22,6 +22,7 @@ class ClientThread extends Thread {
 
     public void run() {
         try {
+            Timer timer = new Timer();
             // Perform 200 random transfers
             for(int i = 0; i < 200; i++) {
                 // Choose a random server 
@@ -40,12 +41,17 @@ class ClientThread extends Thread {
 
                 // Send the request and get the response
                 Printer.print("T-" + Thread.currentThread().getId() + " | Server-" + serverId + " | REQ | " + LocalDateTime.now() + " | TRANSFER | from=" + from + ", to=" + to + ", amount=10", Printer.File.CLIENT, "", "#e3b28a");
+                timer.start();
                 Response res = server.clientRequest(req);
-                Printer.print("T-" + Thread.currentThread().getId() + " | Server-" + serverId + " | RES | " + LocalDateTime.now() + " | " + res.getType() + " | success=" + res.getSuccess() + ", timestamp=" + res.getClock(), Printer.File.CLIENT, "", "#b2f7b9");
+                timer.stop();
+                Printer.print("T-" + Thread.currentThread().getId() + " | Server-" + serverId + " | RES | " + LocalDateTime.now() + " | " + res.getType() + " | time=" + timer.getTime() + "s, success=" + res.getSuccess() + ", timestamp=" + res.getClock(), Printer.File.CLIENT, "", "#b2f7b9");
+                timer.clear();
 
                 // TESTING: Sleep for 1 second
                 // Thread.sleep(1000);
             }
+
+            Printer.print("T-" + Thread.currentThread().getId() + " | | | " + LocalDateTime.now() + " | REPORT | avg transfer time=" + timer.getAverage(), Printer.File.CLIENT, "", "#737bf0");
         } catch (Exception e) {
             System.out.println("Client Thread Error: " + e);
             e.printStackTrace();
@@ -106,17 +112,34 @@ public class BankClient {
 
         // Get the balance of each account
         System.out.println("[MAIN THREAD] Verifying post-threading-transfer balance");
+        Timer timer = new Timer();
         for(int sid = 0; sid < servers.length; sid++) {
             int total = 0;
             IBankServer serv = servers[sid];
             for (int i = 1; i < 21; i++) {
-                Printer.print("MAIN | Server-" + sid + " | REQ | " + LocalDateTime.now() + " | BALANCE | account=" + i, Printer.File.CLIENT, "", "#e3b28a");
+                Printer.print("MAIN | Server-" + sid + " | REQ | " + LocalDateTime.now() + " | GET_BALANCE | account=" + i, Printer.File.CLIENT, "", "#e3b28a");
+                timer.start();
                 Response res = serv.clientRequest((new Request()).ofType(Request.Type.GET_BALANCE).withUid(i).withOrigin("MAIN"));
-                Printer.print("MAIN | Server-" + sid + " | RES | " + LocalDateTime.now() + " | BALANCE | account=" + i + ", balance=" + res.getBalance(), Printer.File.CLIENT, "", "#b2f7b9");
+                timer.stop();
+                Printer.print("MAIN | Server-" + sid + " | RES | " + LocalDateTime.now() + " | GET_BALANCE | time=" + timer.getTime() + "s, account=" + i + ", balance=" + res.getBalance(), Printer.File.CLIENT, "", "#b2f7b9");
+                timer.clear();
                 total += res.getBalance();
             }
             Printer.print("MAIN | Server-" + sid + " | | " + LocalDateTime.now() + " | TOTAL | balance=" + total, Printer.File.CLIENT, "", "#b2b7f7");
         }        
+        Printer.print("MAIN | | | " + LocalDateTime.now() + " | REPORT | avg get balance time=" + timer.getAverage(), Printer.File.CLIENT, "", "#737bf0");
+
+        // Send a halt message to Server0
+        Printer.print("MAIN | Server-0 | REQ | " + LocalDateTime.now() + " | HALT | ", Printer.File.CLIENT, "", "#e3b28a");
+        timer.start();
+        try {
+            servers[0].clientRequest((new Request()).ofType(Request.Type.HALT).withOrigin("MAIN"));
+        } catch(Exception e) {
+            // Ignore this exception
+        }
+        timer.stop();
+        Printer.print("MAIN | Server-0 | RES | " + LocalDateTime.now() + " | HALT | time=" + timer.getTime() + "s, success=true", Printer.File.CLIENT, "", "#b2f7b9");
+        timer.clear();
 
         Printer.closeHtmlLog(Printer.File.CLIENT, "");
     }
