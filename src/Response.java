@@ -1,3 +1,5 @@
+package src;
+
 import java.io.Serializable;
 
 public class Response implements Serializable {
@@ -6,17 +8,19 @@ public class Response implements Serializable {
         CREATE_ACCOUNT,
         GET_BALANCE,
         DEPOSIT,
-        TRANSFER
+        TRANSFER,
+        ACK,
+        NACK
     }
 
-    private String timestamp;
+    private LamportClock clock;
     private Type type;
     private int uid;
     private int balance;
     private boolean success;
 
-    public Response withTimestamp(String timestamp) {
-        this.timestamp = timestamp;
+    public Response withClock(LamportClock clock) {
+        this.clock = clock;
         return this;
     }
 
@@ -40,8 +44,8 @@ public class Response implements Serializable {
         return this;
     }
 
-    public String getTimestamp() {
-        return timestamp;
+    public LamportClock getClock() {
+        return clock;
     }
     public Type getType() {
         return type;

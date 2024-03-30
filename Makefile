@@ -23,7 +23,7 @@ id?=0# Default server id
 all:
 	-make clean
 	@echo "Compiling All Client & Server"
-	${JC} *.java
+	cd src && ${JC} -d ../build *.java
 
 # Compile all server files
 server:
@@ -37,44 +37,57 @@ client:
 
 # Run the client
 runc:
-	@echo "Running BankClient"
-	${JR} BankClient 1 config.xml
+	cd build && ${JR} src/BankClient 10 ../config/config3_local.xml
+
+# Run the client - 1 local server
+cl1:
+	cd build && ${JR} src/BankClient 24 ../config/config1_local.xml
+# Run the client - 3 local servers
+cl3:
+	cd build && ${JR} src/BankClient 24 ../config/config3_local.xml
+# Run the client - 5 local servers
+cl5:
+	cd build && ${JR} src/BankClient 24 ../config/config5_local.xml
+# Run the client - 1 remote server
+cr1:
+	cd build && ${JR} src/BankClient 24 ../config/config1_remote.xml
+# Run the client - 3 remote servers
+cr3:
+	cd build && ${JR} src/BankClient 24 ../config/config3_remote.xml
+# Run the client - 5 remote servers
+cr5:
+	cd build && ${JR} src/BankClient 24 ../config/config5_remote.xml
 
 # Run the server
 runs:
-	@echo "Running BankServer"
-	${JR} BankServer $(id) config.xml
+	cd build && ${JR} src/BankServer $(id) ../config/config3_local.xml
+
+# Run the server - 1 local server
+sl1:
+	cd build && ${JR} src/BankServer 0 ../config/config1_local.xml
+# Run the server - 3 local servers
+sl3:
+	cd build && ${JR} src/BankServer $(id) ../config/config3_local.xml
+
 # Run server 0
 r0:
-	@echo "Running BankServer 0"
-	${JR} BankServer 0 config.xml
+	cd build && ${JR} src/BankServer 0 ../config/config3_local.xml
 # Run server 1
 r1:
-	@echo "Running BankServer 1"
-	${JR} BankServer 1 config.xml
+	cd build && ${JR} src/BankServer 1 ../config/config3_local.xml
 # Run server 2
 r2:
-	@echo "Running BankServer 2"
-	${JR} BankServer 2 config.xml
+	cd build && ${JR} src/BankServer 2 ../config/config3_local.xml
 # Run server 3
 r3:
-	@echo "Running BankServer 3"
 	${JR} BankServer 3 config.xml
 # Run server 4
 r4:
-	@echo "Running BankServer 4"
 	${JR} BankServer 4 config.xml
 
 # Clean all compiled files
 clean:
 	@echo "Cleaning All Client & Server Binaries"
-	-rm *.class
-	-rm clientOutput
-	-rm client.log
-	-rm server*.log
-	
-# Clean just log and output files
-log_clean:
-	@echo "Cleaning All Log and Output Files"
-	-rm client.log
-	-rm server*.log
+	-rm -rf build
+	-rm log/*
+	-rm log/html/*

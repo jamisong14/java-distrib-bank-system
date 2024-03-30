@@ -1,3 +1,5 @@
+package src;
+
 import java.io.Serializable;
 
 public class Request implements Serializable {
@@ -9,15 +11,16 @@ public class Request implements Serializable {
         TRANSFER
     }
 
-    private String timestamp;
+    private LamportClock clock;
     private Type type;
     private int uid;
     private int amount;
     private int fromUid;
     private int toUid;
+    private String origin;
 
-    public Request withTimestamp(String timestamp) {
-        this.timestamp = timestamp;
+    public Request withClock(LamportClock clock) {
+        this.clock = clock;
         return this;
     }
 
@@ -46,8 +49,13 @@ public class Request implements Serializable {
         return this;
     }
 
-    public String getTimestamp() {
-        return timestamp;
+    public Request withOrigin(String origin) {
+        this.origin = origin;
+        return this;
+    }
+
+    public LamportClock getClock() {
+        return clock;
     }
     public Type getType() {
         return type;
@@ -63,6 +71,9 @@ public class Request implements Serializable {
     }
     public int getTo() {
         return toUid;
+    }
+    public String getOrigin() {
+        return origin;
     }
 
     public String parametersToString() {

@@ -1,8 +1,9 @@
 /**
  * Authors:
  *  - Jamison Grudem(grude013)
- *  - Manan Mrig (mrig0001)
  */
+
+package src;
 
 public class Account {
     // Keeps track of the last assigned uid
