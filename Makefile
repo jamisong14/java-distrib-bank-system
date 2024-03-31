@@ -1,6 +1,6 @@
 # Author: Jamison Grudem (grude013)
 # 
-# Using 1 grace day
+# Using 2 grace days
 
 # Predefined Variables: used for compilation and running
 JC = javac

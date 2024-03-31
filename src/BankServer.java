@@ -8,7 +8,7 @@
  * @created 2024-03-30
  * @author Jamison Grudem (grude013)
  * 
- * @grace_days Using 1 grace day
+ * @grace_days Using 2 grace days
  */
 
 package src;

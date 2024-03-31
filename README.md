@@ -1,7 +1,8 @@
 # Java RMI Distributed Banking System
 ## CSCI 5105 - Homework 5
 Author: Jamison Grudem  
-Email: grude013@umn.edu  
+Email: grude013@umn.edu 
+Using 2 grace days 
 
 ## About The Program
 This program is a distributed banking system that uses Java Remote Method Invocation (RMI) for client-server communication and server-server peer communication for replicated server instances. Each server contains a ConcurrentHashMap that stores account information. Each account has a unique account number and a balance.   
@@ -54,7 +55,7 @@ The bank server, found in `src/BankServer.java`, which interfaces from `src/IBan
 * Execute a request locally
     ```java
     // Execute a request locally
-    public Response executeRequest(Request req) throws RemoteException;
+    public Response execute(Request req) throws RemoteException;
     ```
 * Get the id of the server
     ```java
@@ -63,6 +64,9 @@ The bank server, found in `src/BankServer.java`, which interfaces from `src/IBan
     ```
 
 Each server contains its own instance of a Lamport Clock Manager which increments its value on a new client or server request. The Lamport Clock Manager is used to ensure that requests are executed in the same order across all servers. The Lamport Clock Manager is found in `src/LamportClockManager.java`. Since we are running multiple replicated servers, data synchronization is necessary to ensure that all servers have the same data. This is done by using a peer-to-peer multicast system that sends requests to all servers.
+
+View a brief design document of the system here:
+![Design Document](assets/design.jpg)
 
 ### Project Structure
 * Before compiling, the project structure is as follows:
@@ -131,12 +135,12 @@ To run the program with the default arguments, run the following command:
 make server
 ```
 
-To run the program with custom arguments, run the following command:
+To run the program with custom arguments, see the example below:
 ```bash
 make server id=0 s=3 loc=remote
 ```
 
-The server execution will read the configuration file based on the `s` and `loc` arguments. Then, the server will scan the configuration file for the server id specified by the `id` argument. If the server id is not found in the configuration file, the server will exit with an error message. If the server id is found, the server will create a list of connections to all servers except itself. 
+The server execution will read the configuration file based on the `s` and `loc` arguments. In this case, the server reads the `config` directory for a file titled `config3_remote.xml`. Then, the server will scan the configuration file for the server id specified by the `id` argument. If the server id is not found in the configuration file, the server will exit with an error message. If the server id is found, the server will create a list of connections to all servers except itself. 
 
 If a configuration specifies 3 servers and you are running the server with id 0, the server will continuously attempt to connect to the other servers listed in the configuration file until all servers are running and a connection is established between all servers. Make sure if you specify multiple servers in the configuration file that you are running all the servers. See the console output after running the server for more detailed information.
 
@@ -153,17 +157,80 @@ To run the program with the default arguments, run the following command:
 make client
 ```
 
-To run the program with custom arguments, run the following command:
+To run the program with custom arguments, see the example below:
 ```bash
 make client s=3 loc=remote t=12
 ```
 
-The client execution will read the configuration file based on the `s` and `loc` arguments. The client will then create a list of connections to all servers. The client will then create `t` threads that will execute a series of requests to the servers. The client will then wait for all threads to finish before printing the results.
+The client execution will read the configuration file based on the `s` and `loc` arguments. In this case, the client reads the `config` directory for a file titled `config3_remote.xml`. The client will then create a list of connections to all servers. The client will then create `t` threads that will execute a series of requests to the servers. The client will then wait for all threads to finish before printing the results.
 
-**NOTE: The client execution is dependent on the server execution. The server execution must be running before the client execution.**
+**NOTE: The client execution is dependent on the server execution. All specified servers must be running before the client execution.**
 
 ## Logging
+The program uses a logging system (found in `src/Printer.java`) that logs to files in the `log` directory. The log system will create log files for the client as well as each unique server id. The client log file is named `client.log` and the server log files are named `server{id}.log`. Within this `log` directory, an additional directory `html` is created that contains HTML versions of the log files for easier viewing. The HTML log files are named similarily to the plain text log files and are the preferred method of analyzing the logs. ALl unique operations of the log files are color coded, and similar operations are logged in the same color with different shades.
+
+### Client Log
+The client log can be viewed at `log/client.log` or `log/html/client.html`. Each client log contains the columns:
+| Column | Description |
+|--------|-------------|
+| `Thread` | The thread number that executed the request |
+| `Server` | The server id that the request was sent to |
+| `Operation` | The operation that was executed (REQ, RES, etc.) |
+| `Timestamp` | The Lamport Clock timestamp of the request |
+| `Message` | The message that was sent or received (TRANSFER, DEPOSIT, etc.) |
+| `Parameters` | The parameters of the request (from, to, amount) |
+
+The client log contains the following operations:
+* `START` - The start of the client
+* `REQ` - Request sent to a server
+* `RES` - Response received from a server
+
+### Server Log(s)
+The server log can be viewed at `log/server{id}.log` or `log/html/server{id}.html`. Each server log contains the columns:
+| Column | Description |
+|--------|-------------|
+| `Server` | The server id that the request was sent to |
+| `Operation` | The operation that was executed (REQ, RES, etc.) |
+| `Timestamp` | The Lamport Clock timestamp of the request |
+| `Lamport Clock` | The Lamport Clock value at the time of the request |
+| `Origin` | The server or client that the request originated from |
+| `Message` | The message that was sent or received (TRANSFER, DEPOSIT, etc.) |
+| `Parameters` | The parameters of the request (from, to, amount) |
+
+The server log contains the following operations:
+* `CLIENT-REQ` - Request received from a client
+* `<- SRV-REQ` - Request received from another server
+* `-> SRV-REQ` - Request sent to another server
+* `SRV-RES` - Response received from another server
+* `EXECUTE` - Request executed locally
 
 ## Performance Evaluation
+Performance evaluation was collected for the average time between request and response for a transfer as observed by each individual client thread and each server. The average time for a transfer as observed by the client for each thread can be seen in the client log with a message titled `REPORT` in a dark purple color. Each server measures the time between a new client request and the time of execution for that request. It then averages this time for all requests executed by the server. The average time for a transfer as observed by each server can be seen in each server log with a message titled `REPORT` in a dark purple color.
+
+You can view the full performance evaluation in the `REPORT.md` file.
 
 ## Testing
+For test cases 1, 2, and 3 as listed in the assignment writeup, the following hosts/ports were used:
+* `csel-kh1260-{14-18}.cselabs.umn.edu` with ports `80{14-18}`
+  * `csel-kh1260-14.cselabs.umn.edu:8014`
+  * `csel-kh1260-15.cselabs.umn.edu:8015`
+  * `csel-kh1260-16.cselabs.umn.edu:8016`
+  * `csel-kh1260-17.cselabs.umn.edu:8017`
+  * `csel-kh1260-18.cselabs.umn.edu:8018`
+
+See the `config` directory for the configuration files used for testing, which show the exact remote server configurations. See the images below to see the setup and output in the terminals.
+
+<div style='display:flex;flex-direction:row;'>
+    <div style='width: 33%'>
+        <h2>Test Case 1</h2>
+        <img src="assets/remote1.png" alt="Test Case 1"/>
+    </div>
+    <div style='width: 33%'>
+        <h2>Test Case 2</h2>
+        <img src="assets/remote3.png" alt="Test Case 2"/>
+    </div>
+    <div style='width: 33%'>
+        <h2>Test Case 3</h2>
+        <img src="assets/remote5.png" alt="Test Case 3"/>
+    </div>
+</div>
