@@ -497,21 +497,6 @@ public class BankServer implements IBankServer {
             System.out.println("Initialization complete, ready for requests.");
             Printer.print("Server-" + serverId + " |    INIT    | " + LocalDateTime.now(), Printer.File.SERVER, "" + serverId, "#737bf0");
 
-            // The following code snippet is necessary for properly closing the  
-            // log file in the case of a server interruption (e.g. CTRL+C)  
-            final int sid = serverId;
-            Thread shutdownThread = new Thread() {
-                @Override
-                public void run() {
-                    try { Printer.closeHtmlLog(Printer.File.SERVER, "" + sid); }
-                    catch (Exception e) {
-                        System.err.println("Couldn't close log file before terminating.");
-                        e.printStackTrace();
-                    }
-                }
-            };
-            Runtime.getRuntime().addShutdownHook(shutdownThread);
-
             // Wait for 5 minutes before shutting down if no HALT request is received
             Thread.sleep(300000);
     

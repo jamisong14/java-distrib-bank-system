@@ -128,7 +128,7 @@ public class Printer {
 
             // Write the header row for a client log
             if(fileString.contains("client")) {
-                htmlBwriter.write("<table style='width: 100%; position: relative;'><tr style='position: sticky; top: 0; background: white;'>" + 
+                htmlBwriter.write("<br/><button onclick='document.body.scrollTop = document.body.scrollHeight'>Scroll To Bottom</button><table style='width: 100%; position: relative;'><tr style='position: sticky; top: 0; background: white;'>" + 
                     "<th style='border: 1px solid black;'>Thread</th>" +
                     "<th style='border: 1px solid black;'>Server</th>" +
                     "<th style='border: 1px solid black;'>Operation</th>" +
@@ -139,7 +139,7 @@ public class Printer {
             }
             // Write the header row for a server log
             else {
-                htmlBwriter.write("<table style='width: 100%; position: relative;'><tr style='position: sticky; top: 0; background: white;'>" + 
+                htmlBwriter.write("<br/><button onclick='document.body.scrollTop = document.body.scrollHeight'>Scroll To Bottom</button><table style='width: 100%; position: relative;'><tr style='position: sticky; top: 0; background: white;'>" + 
                     "<th style='border: 1px solid black;'>Server</th>" +
                     "<th style='border: 1px solid black;'>Operation</th>" +
                     "<th style='border: 1px solid black;'>Timestamp</th>" +
@@ -167,7 +167,7 @@ public class Printer {
             String htmlFilename = "../log/html/" + getFilenameFromFile(file) + id + ".html";
             FileWriter htmlWriter = new FileWriter(htmlFilename, true);
             BufferedWriter htmlBwriter = new BufferedWriter(htmlWriter);
-            htmlBwriter.write("</table>\n</body>\n</html>\n");
+            htmlBwriter.write("</table>\n<button onclick='document.body.scrollTop = 0;'>Scroll To Top</button></body>\n</html>\n");
             htmlBwriter.flush();
             htmlBwriter.close();
         } catch(Exception e) {

@@ -27,24 +27,24 @@
 ## Local Evaluation (All Servers On Same Host)
 ### 1 Server
 * Total Transfers: 4,800 (24 threads, 200 iterations each)
-* Average Transfer Time (as observed by Client): 
-* Average Transfer Time (as observed by Server0): 
+* Average Transfer Time (as observed by Client): ~0.1929s
+* Average Transfer Time (as observed by Server0): ~0.1925s
 ### 3 Servers
 * Total Transfers: 4,800 (24 threads, 200 iterations each)
-* Average Transfer Time (as observed by Client): 
-* Average Transfer Time (as observed by Server0): 
-* Average Transfer Time (as observed by Server1): 
-* Average Transfer Time (as observed by Server2): 
-* Total Average Server Transfer Time: 
+* Average Transfer Time (as observed by Client): ~0.0438s
+* Average Transfer Time (as observed by Server0): ~0.0115s
+* Average Transfer Time (as observed by Server1): ~0.0188s
+* Average Transfer Time (as observed by Server2): ~0.1095s
+* Total Average Server Transfer Time: 0.0466s
 ### 5 Servers
 * Total Transfers: 4,800 (24 threads, 200 iterations each)
-* Average Transfer Time (as observed by Client): 
-* Average Transfer Time (as observed by Server0): 
-* Average Transfer Time (as observed by Server1): 
-* Average Transfer Time (as observed by Server2): 
-* Average Transfer Time (as observed by Server3): 
-* Average Transfer Time (as observed by Server4): 
-* Total Average Server Transfer Time: 
+* Average Transfer Time (as observed by Client): ~0.0720s
+* Average Transfer Time (as observed by Server0): ~0.0267s
+* Average Transfer Time (as observed by Server1): ~0.0192s
+* Average Transfer Time (as observed by Server2): ~0.0139s
+* Average Transfer Time (as observed by Server3): ~0.0199s
+* Average Transfer Time (as observed by Server4): ~0.2573s
+* Total Average Server Transfer Time: 0.0674s
 
 
 ## Analysis
