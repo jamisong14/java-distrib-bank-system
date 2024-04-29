@@ -1,8 +1,6 @@
 # Java RMI Distributed Banking System
-## CSCI 5105 - Homework 5
 Author: Jamison Grudem  
 Email: grude013@umn.edu 
-Using 2 grace days 
 
 ## About The Program
 This program is a distributed banking system that uses Java Remote Method Invocation (RMI) for client-server communication and server-server peer communication for replicated server instances. Each server contains a ConcurrentHashMap that stores account information. Each account has a unique account number and a balance.   
